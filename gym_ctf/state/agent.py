@@ -1,7 +1,7 @@
 import numpy as np
 
 class Agent():
-    def __init__(self, location=np.array([0,0]), orientation=0, team=0):
+    def __init__(self, location=(0,0), orientation=0, team=0):
         self.loc = location
         self.orientation = orientation
         self.team = team
