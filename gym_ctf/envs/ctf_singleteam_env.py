@@ -23,7 +23,7 @@ class CtfSingleTeamEnv(gym.Env):
                 self.viewer.close()
                 self.viewer = None
 
-        if self.viewer = None:
+        if self.viewer == None:
             from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(600, 400)
 
