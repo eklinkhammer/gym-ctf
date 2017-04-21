@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import math
 
 class Flag():
     """ A flag is target that agents use to score in capture the flag.
@@ -7,6 +8,8 @@ class Flag():
     """
     
     def __init__(self, pos, scoring_radius):
+        assert scoring_radius >= 0
+        
         self.position = pos
         self.scoring_radius = scoring_radius
         self.taken = False
@@ -39,7 +42,7 @@ class Flag():
         if max_y is None: max_y = max_x
 
         rand_x = random.randrange(min_x, max_x,1)
-        rand_y = random.rangrange(min_y, max_y,1)
+        rand_y = random.randrange(min_y, max_y,1)
 
         position = (rand_x, rand_y)
         return position
@@ -83,6 +86,6 @@ class Flag():
         Returns:
             boolean. True iff position_other is within scoring radius.
         """
-        distance = math.sqrt(math.pow(self.pos[0] - position_other[0], 2) +
-                             math.pow(self.pos[1] - position_other[1], 2))
+        distance = math.sqrt(math.pow(self.position[0] - position_other[0], 2) +
+                             math.pow(self.position[1] - position_other[1], 2))
         return distance <= self.scoring_radius

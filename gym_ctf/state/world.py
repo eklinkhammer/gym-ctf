@@ -1,6 +1,10 @@
 import numpy as np
-import agent
-import team
+from . import agent
+from . import team
+from . import flag
+
+from pprint import pprint
+from inspect import getmembers
 
 class World():
     """ World is a the simulation environment for the capture the flag gym 
@@ -12,6 +16,7 @@ class World():
         self.width = width
         self.teams = teams
         self.team_count = self.teams.size
+        self.time_to_score = time_to_score
 
         if scoring_radius is None:
             scoring_radius = height*width*0.01
@@ -73,10 +78,10 @@ class World():
         """
 
         flags = []
-        for i range(int(num_flags)):
-            flags.append(Flag.random_flag(0, 0, self.width, self.height, self.scoring_radius))
+        for i in range(int(num_flags)):
+            flags.append(flag.Flag.random_flag(0, 0, self.width, self.height, self.flag_radius))
 
-        return flags
+        return np.array(flags)
 
     @classmethod
     def to_commands(actions):
@@ -100,10 +105,10 @@ class World():
             if flag.taken:
                 continue
             max_team_score = 0
-            team_score = 0
             team_id = None
             for team in self.teams:
-                for agent in team:
+                team_score = 0
+                for agent in team.agents:
                     if flag.within_scoring_distance(agent.loc):
                         team_score += 1
                 if team_score > max_team_score:
@@ -151,7 +156,7 @@ class World():
             self.teams - Applies the command to each agent.
         """
         
-        self.teams = _zipZip(self.teams, commands, (lambda (a,c) : a.action(c)))
+        self.teams = _zipZip(self.teams, commands, (lambda ac : ac[0].action(ac[1])))
         
 
     @classmethod
