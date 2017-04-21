@@ -103,3 +103,11 @@ class Agent():
         pt2 = (base_midpoint[0] + base_dx, base_midpoint[1] + base_dy)
         pt3 = (base_midpoint[0] - base_dx, base_midpoint[1] - base_dy)
         return (top, pt2, pt3)
+
+    def obs(self):
+        """ Create observation numpy array.
+
+        Returns:
+            numpy array (length 4): X, Y, Theta, Team
+        """
+        return np.array([self.loc[0], self.loc[1], self.orientation, self.team])

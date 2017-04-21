@@ -25,3 +25,11 @@ class Team():
             list of 3-point tuples.
         """
         return map((lambda a : a.triangle(b,h)), self.agents)
+
+    def obs(self):
+        """ Observation array for team.
+
+        Returns:
+            numpy array. Observation of all agents.
+        """
+        return map((lambda a : a.obs()), self.agents)

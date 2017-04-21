@@ -27,10 +27,10 @@ class Flag():
                 defined by the ranges.
 
         Args:
-            param1 (double): Minimum x value (lower-left corner)
-            param2 (double): Minimum y value (lower-left corner)
-            param3 (double): Maximum x value (upper-right corner)
-            param4 (double): Maximum y value (upper-right corner)
+            min_x (double): Minimum x value (lower-left corner)
+            min_y (double): Minimum y value (lower-left corner)
+            max_x (double): Maximum x value (upper-right corner)
+            max_y (double): Maximum y value (upper-right corner)
 
         Returns:
             (double, double). 2D point.
@@ -50,11 +50,11 @@ class Flag():
                 random because it depends (for best results) on container size.
         
         Args:
-            param1 (double): Minimum x value (lower-left corner)
-            param2 (double): Minimum y value (lower-left corner)
-            param3 (double): Maximum x value (upper-right corner)
-            param4 (double): Maximum y value (upper-right corner)
-            param5 (double): The radius within which agents capture the flag
+            min_x (double): Minimum x value (lower-left corner)
+            min_y (double): Minimum y value (lower-left corner)
+            max_x (double): Maximum x value (upper-right corner)
+            max_y (double): Maximum y value (upper-right corner)
+            scoring_radius (double): The radius within which agents can ctf
 
         Returns:
             Flag. A flag object at a random 2D point.
@@ -73,3 +73,16 @@ class Flag():
         else:
             team = -1
         return np.array([self.position[0], self.position[1], team])
+
+    def within_scoring_distance(self, position_other):
+        """ Determine if other position is within the scoring radius of the flag
+
+        Args:
+            position_other (2-tuple of doubles): 2D point
+
+        Returns:
+            boolean. True iff position_other is within scoring radius.
+        """
+        distance = math.sqrt(math.pow(self.pos[0] - position_other[0], 2) +
+                             math.pow(self.pos[1] - position_other[1], 2))
+        return distance <= self.scoring_radius
