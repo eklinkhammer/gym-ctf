@@ -3,9 +3,6 @@ from . import agent
 from . import team
 from . import flag
 
-from pprint import pprint
-from inspect import getmembers
-
 class World():
     """ World is a the simulation environment for the capture the flag gym 
         environment. It is a container for the teams and flags.
