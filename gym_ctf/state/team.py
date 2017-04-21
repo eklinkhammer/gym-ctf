@@ -1,5 +1,5 @@
 import numpy as np
-import agent
+from . import agent
 
 class Team():
     def __init__(self, agents=np.array([]), team=None):
@@ -10,8 +10,8 @@ class Team():
         if team is None:
             team = 0
 
-        this.agents = map((lambda a : a.set_team(team)), agents)
-        this.team = team
+        self.agents = list(map((lambda a : a.set_team(team)), agents))
+        self.team = team
 
     def triangles(self, b=1.0, h=None):
         """ The triangles centered around all agents. Used to render.
@@ -25,3 +25,11 @@ class Team():
             list of 3-point tuples.
         """
         return map((lambda a : a.triangle(b,h)), self.agents)
+
+    def obs(self):
+        """ Observation array for team.
+
+        Returns:
+            numpy array. Observation of all agents.
+        """
+        return map((lambda a : a.obs()), self.agents)
