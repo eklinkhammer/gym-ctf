@@ -69,12 +69,12 @@ class Flag():
 
         Returns:
             numpy array of length 3. Contains position of flag and scoring
-                team. Team is -1 if no team scored.
+                team. Team is 0 if no team scores
         """
         if self.taken:
             team = self.scoring_team
         else:
-            team = -1
+            team = 0
         return np.array([self.position[0], self.position[1], team])
 
     def within_scoring_distance(self, position_other):

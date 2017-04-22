@@ -8,7 +8,7 @@ class Team():
                 team = agents[0].team
 
         if team is None:
-            team = 0
+            team = 1
 
         self.agents = list(map((lambda a : a.set_team(team)), agents))
         self.team = team
