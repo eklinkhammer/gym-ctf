@@ -18,27 +18,16 @@ class CtfEnv(gym.Env):
         self.number_flags = 10
         self.flag_radius = 2
         self.time_to_score = 5
+        self.time_limit = 30
         
         self.create_teams()
-
+        self.create_world()
+        
         self.set_observation_space()
         self.set_action_space()
         
-        self.action_
-        self.min_position = -1.2
-        self.max_position = 0.6
-        self.max_speed = 0.07
-        self.goal_position = 0.5
-        
-        self.low = np.array([self.min_position, -self.max_speed])
-        self.high = np.array([self.max_position, self.max_speed])
-        
         self.viewer = None
 
-        self.action_space = spaces.Discrete(3)
-        self.observation_space = spaces.Box(self.low, self.high)
-
-        self.position = -1
         self._seed()
         self.reset()
 
@@ -49,25 +38,16 @@ class CtfEnv(gym.Env):
     def _step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
-        position, velocity = self.state
-        velocity += (action-1)*0.001 + math.cos(3*position)*(-0.0025)
-        velocity = np.clip(velocity, -self.max_speed, self.max_speed)
-        position += velocity
-        position = np.clip(position, self.min_position, self.max_position)
-        if (position==self.min_position and velocity<0): velocity = 0
+        self.world.world_step(action)
+        done = bool(self.world.time >= self.time_limit)
 
-        done = bool(position >= self.goal_position)
         reward = -1.0
 
-        self.state = (position, velocity)
-        return np.array(self.state), reward, done, {}
+        return self.world.get_observation(), reward, done, {}
 
     def _reset(self):
-        self.state = np.array([self.np_random.uniform(low=-0.6, high=-0.4), 0])
-        return np.array(self.state)
-
-    def _height(self, xs):
-        return np.sin(3 * xs)*.45+.55
+        self.world.reset()
+        return self.world.get_observation()
 
     def _render(self, mode='human', close=False):
         if close:
@@ -106,8 +86,21 @@ class CtfEnv(gym.Env):
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 
     def create_teams(self):
-        pass
+        self.teams = []
+        for t in range(self.num_teams):
+            team = []
+            for _ in range(self.number_agents_per_team[t]):
+                rLoc = flag.Flag.random_pos(self.origin_x, self.origin_y,
+                                            self.world_width, self.world_heigh)
+                
+                team.append(agent.Agent(rLoc, 0, t + 1))
+            self.teams.append(np.array(team))
+        self.teams = np.array(self.teams)
 
+    def create_world(self):
+        self.world = world.World(self.world_height, self.world_width,
+                                 self.teams)
+        
     def set_observation_space():
         self.origin_x = 0
         self.origin_y = 0
@@ -132,6 +125,8 @@ class CtfEnv(gym.Env):
         for _ in range(self.number_flags):
             self.all_obs.append(self.flag_obs)
 
+        self.all_obs.append(spaces.Discrete(self.time_limit))
+        
         self.observation_space = spaces.Tuple(self.all_obs)
 
     def set_action_space():

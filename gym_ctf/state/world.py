@@ -2,6 +2,7 @@ import numpy as np
 from . import agent
 from . import team
 from . import flag
+from . import command
 
 class World():
     """ World is a the simulation environment for the capture the flag gym 
@@ -86,7 +87,7 @@ class World():
                converts them into the Command format. Applies the command to
                all of the agents. 
         """
-        return  map ((lambda t : map((lambda a : Command.from_action(a)), t)), actions)
+        return  map ((lambda t : map((lambda a : command.Command.from_action(a)), t)), actions)
 
 
     def score_flags(self):
