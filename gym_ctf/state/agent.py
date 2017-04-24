@@ -44,7 +44,7 @@ class Agent():
         vec = move_command.vector
         pos = np.add(self.loc, vec)
         ori = np.arctan2(vec[1], vec[0])
-        return update_move(self, pos, ori)
+        return self.update_move(pos, ori)
 
     def update_move(self, pos, ori):
         """ Immutable agent position and orientation update. 
@@ -77,7 +77,7 @@ class Agent():
         a.team = team
         return a
     
-    def triangle(self, b=1.0, h=None):
+    def triangle(self, b=1.0, h=None, scale_x=1, scale_y=1):
         """ Returns the points of a triangle pointed in the direction of
                 orientation centered at position.
         
@@ -95,8 +95,10 @@ class Agent():
 
         dx = np.cos(self.orientation)
         dy = np.sin(self.orientation)
-        top = (self.loc[0] + dx * 0.5 * h, self.loc[1] + dy * 0.5 * h)
-        base_midpoint = (self.loc[0] - dx * 0.5 * h, self.loc[1] - dy * 0.5 * h)
+        x = self.loc[0] * scale_x
+        y = self.loc[1] * scale_y
+        top = (x + dx * 0.5 * h, y + dy * 0.5 * h)
+        base_midpoint = (x - dx * 0.5 * h, y - dy * 0.5 * h)
         base_line = (dy, -dx)
         base_dx = base_line[0] * 0.5 * b
         base_dy = base_line[1] * 0.5 * b

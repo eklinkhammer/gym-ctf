@@ -5,8 +5,14 @@ from gym.utils import seeding
 import math
 
 from ..state import agent
+from ..state import flag
+from ..state import world
+from ..state import team
+
 class CtfEnv(gym.Env):
     metadata = {'render.modes': ['human']}
+    COLOR = {1 : [255, 0, 0],
+             2 : [0, 255, 0]}
     def __init__(self):
         """ Using single agent env, all mutliagent parameters are fixed for now
         """
@@ -14,17 +20,17 @@ class CtfEnv(gym.Env):
         self.world_height = 100
         self.world_width = 100
         self.num_teams = 2
-        self.number_agents_per_team = np.array([5, 5])
+        self.number_agents_per_team = np.array([4,4])
         self.number_flags = 10
         self.flag_radius = 2
         self.time_to_score = 5
         self.time_limit = 30
+
+        self.set_observation_space()
+        self.set_action_space()
         
         self.create_teams()
         self.create_world()
-        
-        self.set_observation_space()
-        self.set_action_space()
         
         self.viewer = None
 
@@ -38,7 +44,9 @@ class CtfEnv(gym.Env):
     def _step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
-        self.world.world_step(action)
+        team_actions = self.to_team_actions(action)
+            
+        self.world.world_step(team_actions)
         done = bool(self.world.time >= self.time_limit)
 
         reward = -1.0
@@ -50,6 +58,10 @@ class CtfEnv(gym.Env):
         return self.world.get_observation()
 
     def _render(self, mode='human', close=False):
+        """ Render incomplete, but entirely functional. Shouldn't have to reopen
+            viewer. Transform translation not working. Causes jumpy behavior
+        """
+        
         if close:
             if self.viewer is not None:
                 self.viewer.close()
@@ -59,49 +71,86 @@ class CtfEnv(gym.Env):
         screen_width = 600
         screen_height = 400
 
-        world_width = self.max_position - self.min_position
-        scale = screen_width/world_width
+        scale_w = screen_width / self.world_width
+        scale_h = screen_height / self.world_height
         carwidth=40
         carheight=20
 
-
+        if self.viewer is not None:
+            self.viewer.close()
+            self.viewer = None
+            
         if self.viewer is None:
             from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(screen_width, screen_height)
-            clearance = 10
+            clearance = 1
 
-            robot = agent.Agent(np.array([0,0]),4.2)
-            car = rendering.FilledPolygon(robot.triangle(30))
-            car.add_attr(rendering.Transform(translation=(0, clearance)))
-            self.cartrans = rendering.Transform()
-            car.add_attr(self.cartrans)
-            self.viewer.add_geom(car)
+            i = 0
+            self.robot_trans = {}
+            # self.robot_locs = {}
+            # self.robot_heading = {}
+            for t in self.world.teams:
+                c = self.COLOR[t.team]
+                for a in t:
+                    car_r = rendering.FilledPolygon(a.triangle(b=20, scale_x=scale_w, scale_y=scale_h))
+                    car_r.add_attr(rendering.Transform())
+                    cartrans = rendering.Transform()
+                    car_r.add_attr(cartrans)
+                    car_r.set_color(c[0], c[1], c[2])
+                    self.viewer.add_geom(car_r)
+                    self.robot_trans[i] = cartrans
+                    # self.robot_locs[i] = a.loc
+                    # self.robot_heading[i] = a.orientation
+                    i = i + 1
+                    
+            # robot = agent.Agent(np.array([0,0]),4.2)
+            # car = rendering.FilledPolygon(robot.triangle(30))
+            # car.add_attr(rendering.Transform(translation=(0, clearance)))
+            # self.cartrans = rendering.Transform()
+            # car.add_attr(self.cartrans)
+            # self.viewer.add_geom(car)
 
-        pos = self.state[0]
-        print (pos)
-        self.position = self.position + 0.1
-        self.cartrans.set_translation((self.position-self.min_position)*scale, 200)
-        self.cartrans.set_rotation(math.cos(3 * pos))
-
+        # i = 0
+        # for t in self.world.teams:
+        #     for a in t:
+        #         print ("Step")
+        #         # print (self.robot_locs[i])
+        #         print (a.loc)
+        #         print (a.orientation)
+        #         # dx = a.loc[0] - self.robot_locs[i][0]
+        #         # dy = a.loc[1] - self.robot_locs[i][1]
+        #         # dt = a.orientation - self.robot_heading[i]
+        #         # self.robot_locs[i] = a.loc
+        #         self.robot_trans[i].set_translation(a.loc[0]*scale_w, a.loc[1]*scale_h)
+        #         self.robot_trans[i].set_rotation(a.orientation)
+        #         i = i + 1
+                
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 
+    def to_team_actions(self, actions):
+        team_actions = []
+        for x in self.number_agents_per_team:
+            team_actions.append(actions[:x])
+            actions = actions[x:]
+        return team_actions
+    
     def create_teams(self):
         self.teams = []
         for t in range(self.num_teams):
-            team = []
+            agents = []
             for _ in range(self.number_agents_per_team[t]):
                 rLoc = flag.Flag.random_pos(self.origin_x, self.origin_y,
-                                            self.world_width, self.world_heigh)
+                                            self.world_width, self.world_height)
                 
-                team.append(agent.Agent(rLoc, 0, t + 1))
-            self.teams.append(np.array(team))
+                agents.append(agent.Agent(rLoc, 0, t + 1))
+            self.teams.append(team.Team(np.array(agents), t + 1))
         self.teams = np.array(self.teams)
 
     def create_world(self):
         self.world = world.World(self.world_height, self.world_width,
                                  self.teams)
         
-    def set_observation_space():
+    def set_observation_space(self):
         self.origin_x = 0
         self.origin_y = 0
 
@@ -129,7 +178,7 @@ class CtfEnv(gym.Env):
         
         self.observation_space = spaces.Tuple(self.all_obs)
 
-    def set_action_space():
+    def set_action_space(self):
         self.vector_box = spaces.Box(np.array([-1,-1]), np.array([1,1]))
         self.agent_action = spaces.Tuple((spaces.Discrete(1), # action type
                                           self.vector_box))   # move action

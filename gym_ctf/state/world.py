@@ -38,7 +38,8 @@ class World():
             Flags is all flags, and their scoring status.
             Time is the current play time of the game.
         """
-        teams_obs = map(obs, self.teams)
+
+        teams_obs = map((lambda t : t.obs()), self.teams)
         flags_obs = map((lambda f : f.obs()), self.flags)
         return teams_obs, flags_obs, self.time
 
@@ -81,13 +82,12 @@ class World():
 
         return np.array(flags)
 
-    @classmethod
-    def to_commands(actions):
+    def to_commands(self, actions):
         """ Given the actions (as defined by the Gym Env) for each agent, 
                converts them into the Command format. Applies the command to
                all of the agents. 
         """
-        return  map ((lambda t : map((lambda a : command.Command.from_action(a)), t)), actions)
+        return  map ((lambda t : map((lambda a : command.from_action(a)), t)), actions)
 
 
     def score_flags(self):
@@ -135,7 +135,7 @@ class World():
             self.flags - updates scoring status
             self.time  - increments
         """
-        commands = World.to_commands(actions)
+        commands = self.to_commands(actions)
         self.apply_commands(commands)
         self.score_flags()
         self.timestep()
@@ -153,12 +153,12 @@ class World():
         Mutates:
             self.teams - Applies the command to each agent.
         """
-        
-        self.teams = _zipZip(self.teams, commands, (lambda ac : ac[0].action(ac[1])))
-        
 
-    @classmethod
-    def _zipZip(arr1, arr2, f=None):
+        self.new_agents = self._zipZip(self.teams, commands, (lambda ac : ac[0].action(ac[1])))
+        for i in range(self.team_count):
+            self.teams[i].set_team(self.new_agents[i])
+                
+    def _zipZip(self, arr1, arr2, f=None):
         """ ZipZip zips two 2D arrays to produce a 2D array with each element
                 being the result of an elementwise application of f to the 
                 input arrays.
@@ -166,14 +166,13 @@ class World():
             zipZip :: [[a]] -> [[b]] -> (a -> b -> c) -> [[c]]
             zipZip xs ys f = zipWith (zipWith f) xs ys
         """
-        return [zipWith(a,b,f) for (a,b) in zip(arr1, arr2)]
+        return [self.zipWith(a,b,f) for (a,b) in zip(arr1, arr2)]
 
-    @classmethod
-    def zipWith (arr1, arr2, f=None):
+    def zipWith (self, arr1, arr2, f=None):
         """ zipWith :: [a] -> [b] -> (a -> b -> c) -> [c]
             Default behavior is zip: f a b = (a,b)
         """
         if f is None:
             return zip(arr1, arr2)
 
-        return [f(a,b) for (a,b) in zip(arr1, arr2)]
+        return [f ((a,b)) for (a,b) in zip(arr1, arr2)]
