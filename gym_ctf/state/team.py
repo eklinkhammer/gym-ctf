@@ -8,11 +8,14 @@ class Team():
                 team = agents[0].team
 
         if team is None:
-            team = 0
+            team = 1
 
         self.agents = list(map((lambda a : a.set_team(team)), agents))
         self.team = team
 
+    def __iter__(self):
+        return (x for x in self.agents)
+    
     def triangles(self, b=1.0, h=None):
         """ The triangles centered around all agents. Used to render.
             Exact behavior and default value handling dependent on agents
@@ -33,3 +36,6 @@ class Team():
             numpy array. Observation of all agents.
         """
         return map((lambda a : a.obs()), self.agents)
+
+    def set_team(self, new_agents):
+        self.agents = new_agents
