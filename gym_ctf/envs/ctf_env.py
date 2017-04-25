@@ -11,8 +11,10 @@ from ..state import team
 
 class CtfEnv(gym.Env):
     metadata = {'render.modes': ['human']}
+    
     COLOR = {1 : [255, 0, 0],
              2 : [0, 255, 0]}
+    
     def __init__(self):
         """ Using single agent env, all mutliagent parameters are fixed for now
         """
@@ -24,7 +26,7 @@ class CtfEnv(gym.Env):
         self.number_flags = 10
         self.flag_radius = 2
         self.time_to_score = 5
-        self.time_limit = 30
+        self.time_limit = 10
 
         self.set_observation_space()
         self.set_action_space()
@@ -42,6 +44,21 @@ class CtfEnv(gym.Env):
         return [seed]
 
     def _step(self, action):
+        """ Execute actions. Returns new world state, reward, and done status.
+                Reward is a vector (not a float). This means it cannot be processed
+                directly by Open AI learning tools.
+
+        Args:
+            action (list of actions): A list of Tuples of action type and vector
+        
+        Returns:
+            observation (location, heading, and team of all agents. location 
+                status of all flags. Current time)
+            reward (np array of floats): reward per team. 
+               NOTE NOT A FLOAT. NOT WHAT OPENAI EXPECTS
+            done (boolean): whether epoch is done
+            _ (?): unknown
+        """
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
 
         team_actions = self.to_team_actions(action)
@@ -49,7 +66,7 @@ class CtfEnv(gym.Env):
         self.world.world_step(team_actions)
         done = bool(self.world.time >= self.time_limit)
 
-        reward = -1.0
+        reward = self.world.get_reward()
 
         return self.world.get_observation(), reward, done, {}
 
@@ -61,7 +78,6 @@ class CtfEnv(gym.Env):
         """ Render incomplete, but entirely functional. Shouldn't have to reopen
             viewer. Transform translation not working. Causes jumpy behavior
         """
-        
         if close:
             if self.viewer is not None:
                 self.viewer.close()
@@ -73,8 +89,6 @@ class CtfEnv(gym.Env):
 
         scale_w = screen_width / self.world_width
         scale_h = screen_height / self.world_height
-        carwidth=40
-        carheight=20
 
         if self.viewer is not None:
             self.viewer.close()
@@ -93,7 +107,6 @@ class CtfEnv(gym.Env):
                 c = self.COLOR[t.team]
                 for a in t:
                     car_r = rendering.FilledPolygon(a.triangle(b=20, scale_x=scale_w, scale_y=scale_h))
-                    car_r.add_attr(rendering.Transform())
                     cartrans = rendering.Transform()
                     car_r.add_attr(cartrans)
                     car_r.set_color(c[0], c[1], c[2])
@@ -102,7 +115,14 @@ class CtfEnv(gym.Env):
                     # self.robot_locs[i] = a.loc
                     # self.robot_heading[i] = a.orientation
                     i = i + 1
-                    
+
+            for f in self.world.flags:
+                flag_r = rendering.make_circle()
+                flag_r.set_color(128, 0, 128)
+                x = f.position[0] * scale_w
+                y = f.position[1] * scale_h
+                flag_r.add_attr(rendering.Transform(translation=(x,y)))
+                self.viewer.add_geom(flag_r)
             # robot = agent.Agent(np.array([0,0]),4.2)
             # car = rendering.FilledPolygon(robot.triangle(30))
             # car.add_attr(rendering.Transform(translation=(0, clearance)))
@@ -148,7 +168,7 @@ class CtfEnv(gym.Env):
 
     def create_world(self):
         self.world = world.World(self.world_height, self.world_width,
-                                 self.teams)
+                                 self.teams, None, None, self.number_flags)
         
     def set_observation_space(self):
         self.origin_x = 0
